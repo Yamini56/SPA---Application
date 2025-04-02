@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPA Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        #dashboard {
+            display: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Login Form -->
+    <div id="login-form">
+        <h2>Login</h2>
+        <form id="loginForm">
+            <input type="text" id="userId" placeholder="User ID" required><br><br>
+            <input type="password" id="password" placeholder="Password" required><br><br>
+            <select id="role">
+                <option value="General User">General User</option>
+                <option value="Admin">Admin</option>
+            </select><br><br>
+            <button type="submit">Login</button>
+        </form>
+        <p id="login-error" style="color: red;"></p>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard">
+        <h2 id="userInfo"></h2>
+        <h3>Your Records</h3>
+        <table id="recordsTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Record Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Records will be populated here -->
+            </tbody>
+        </table>
+        <button id="manageUsersButton" class="hidden">Manage Users</button>
+        <h3>Admin Controls (for Admin only)</h3>
+        <div id="userManagement">
+            <button id="fetchUsersButton" class="hidden">Fetch All Users</button>
+            <pre id="userList" class="hidden"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Dummy API data
+        const users = [
+            { userId: 'admin', password: 'admin123', role: 'Admin' },
+            { userId: 'user1', password: 'password', role: 'General User' }
+        ];
+
+        const records = [
+            { id: 1, name: 'Record 1', userId: 'admin' },
+            { id: 2, name: 'Record 2', userId: 'user1' },
+            { id: 3, name: 'Record 3', userId: 'user1' }
+        ];
+
+        // Simulate API delay
+        const delayResponse = (data, delay) => {
+            return new Promise((resolve) => {
+                setTimeout(() => resolve(data), delay);
+            });
+        };
+
+        // Handle Login
+        const loginForm = document.getElementById('loginForm');
+        const userIdInput = document.getElementById('userId');
+        const passwordInput = document.getElementById('password');
+        const roleSelect = document.getElementById('role');
+        const loginError = document.getElementById('login-error');
+        const loginFormDiv = document.getElementById('login-form');
+        const dashboardDiv = document.getElementById('dashboard');
+        const userInfo = document.getElementById('userInfo');
+        const recordsTable = document.getElementById('recordsTable').getElementsByTagName('tbody')[0];
+        const manageUsersButton = document.getElementById('manageUsersButton');
+        const fetchUsersButton = document.getElementById('fetchUsersButton');
+        const userList = document.getElementById('userList');
+
+        // Simulate user login validation
+        const login = async (userId, password, role) => {
+            const user = users.find(u => u.userId === userId && u.password === password && u.role === role);
+            if (user) {
+                // Store user info in local storage (simulating session)
+                localStorage.setItem('user', JSON.stringify(user));
+                loginFormDiv.style.display = 'none';
+                dashboardDiv.style.display = 'block';
+                userInfo.textContent = `Welcome, ${user.userId} (${user.role})`;
+                await fetchRecords(user.userId);
+
+                if (user.role === 'Admin') {
+                    manageUsersButton.classList.remove('hidden');
+                    fetchUsersButton.classList.remove('hidden');
+                }
+            } else {
+                loginError.textContent = 'Invalid credentials or role!';
+            }
+        };
+
+        // Fetch records for logged-in user
+        const fetchRecords = async (userId) => {
+            const userRecords = records.filter(record => record.userId === userId);
+            userRecords.forEach(record => {
+                const row = recordsTable.insertRow();
+                row.insertCell(0).textContent = record.id;
+                row.insertCell(1).textContent = record.name;
+            });
+        };
+
+        // Handle Manage Users (for Admin)
+        const manageUsers = async () => {
+            const allUsers = await delayResponse(users, 1000);
+            userList.textContent = JSON.stringify(allUsers, null, 2);
+            userList.classList.remove('hidden');
+        };
+
+        // Handle form submission
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const userId = userIdInput.value;
+            const password = passwordInput.value;
+            const role = roleSelect.value;
+            login(userId, password, role);
+        });
+
+        // Show the list of users (Admin only)
+        fetchUsersButton.addEventListener('click', manageUsers);
+
+        // Check if the user is already logged in (session persistence)
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            const user = JSON.parse(storedUser);
+            login(user.userId, user.password, user.role); // Automatically login based on stored session
+        }
+    </script>
+
+</body>
+
+</html>
